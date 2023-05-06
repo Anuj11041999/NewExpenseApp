@@ -7,7 +7,7 @@
     <title>Document</title>
 </head>
 <body>
-    <form>
+    <form id="form">
         <label for="email">Email</label>
         <input type="email" id="email"><br>
         <label for="password">Password</label>
@@ -16,4 +16,14 @@
         <a href="signup.html">New User</a>    
     </form>
 </body>
+<script>
+    async function loginCheck(user){
+        const response = await axios.post("localhost:3000/login",user);
+        return response.data;
+    }
+    const form = document.getElementById("form");
+    const login =  form.querySelector("#login");
+    login.addEventListener("click", loginCheck);
+
+</script>
 </html>
