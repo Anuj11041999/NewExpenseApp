@@ -16,14 +16,5 @@
         <a href="signup.html">New User</a>    
     </form>
 </body>
-<script>
-    async function loginCheck(user){
-        const response = await axios.post("localhost:3000/login",user);
-        return response.data;
-    }
-    const form = document.getElementById("form");
-    const login =  form.querySelector("#login");
-    login.addEventListener("click", loginCheck);
-
-</script>
+<script src="login.js"></script>
 </html>
