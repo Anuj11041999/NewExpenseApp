@@ -1,70 +1,48 @@
 const Expense = require('../models/expense');
 
-exports.getExpenses = async (req, res, next) => {
-  try {
-    console.log('yes1');
-    const expenses = await Expense.findAll();
-    console.log('fetched');
-    res.json(expenses);
-  } catch (err) {
-    console.log(err);
-  }
-};
-
-exports.addExpense = async (req, res, next) => {
-  try {
+const addexpense = (req, res) => {
     const { amount, description, category } = req.body;
-    const expense = await Expense.create({
-      amount: amount,
-      description: description,
-      category: category,
-    });
-    console.log('inserted');
-    res.json({
-      id: expense.id,
-      amount: amount,
-      description: description,
-      category: category,
-    });
-  } catch (err) {
-    console.log(err);
-  }
-};
 
-exports.deleteExpense = async (req, res, next) => {
-  try {
-    if (req.params.id === 'undefined') {
-      console.log('ID missing');
-      return res.status(400).json({ err: 'ID missing' });
+    if(amount == undefined || amount.length === 0 ){
+        return res.status(400).json({success: false, message: 'Parameters missing'})
     }
-    const uId = req.params.id;
-    const result = await Expense.destroy({ where: { id: uId } });
-    res.sendStatus(200);
-  } catch (err) {
-    console.log(err);
-    res.status(500).json(err);
-  }
-};
+    
+    Expense.create({ amount, description, category, userId: req.user.id}).then(expense => {
+        return res.status(201).json({expense, success: true } );
+    }).catch(err => {
+        return res.status(500).json({success : false, error: err})
+    })
+}
 
-exports.postEditExpense = async (req, res, next) => {
-  try {
-    if (req.params.id === 'undefined') {
-      console.log('ID missing');
-      return res.status(400).json({ err: 'ID missing' });
+const getexpenses = (req, res)=> {
+    
+    Expense.findAll({ where : { userId: req.user.id}}).then(expenses => {
+        return res.status(200).json({expenses, success: true})
+    })
+    .catch(err => {
+        console.log(err)
+        return res.status(500).json({ error: err, success: false})
+    })
+}
+
+const deleteexpense = (req, res) => {
+    const expenseid = req.params.expenseid;
+    if(expenseid == undefined || expenseid.length === 0){
+        return res.status(400).json({success: false, })
     }
-    const updatedAmount = req.body.amount;
-    const updatedDescription = req.body.description;
-    const updatedCategory = req.body.category;
-    const expenseId = req.params.id;
-    const expense = await Expense.findByPk(expenseId);
-    expense.amount = updatedAmount;
-    expense.description = updatedDescription;
-    expense.category = updatedCategory;
-    await expense.save();
-    console.log('Updated');
-    res.sendStatus(200);
-  } catch (err) {
-    console.log(err);
-    res.status(500).json(err);
-  }
-};
+    Expense.destroy({where: { id: expenseid, userId: req.user.id }}).then((noofrows) => {
+        if(noofrows === 0){
+            return res.status(404).json({success: false, message: 'Expense doenst belong to the user'})
+        }
+        return res.status(200).json({ success: true, message: "Deleted Successfuly"})
+    }).catch(err => {
+        console.log(err);
+        return res.status(500).json({ success: true, message: "Failed"})
+    })
+}
+
+module.exports = {
+    deleteexpense,
+    getexpenses,
+    addexpense
+}

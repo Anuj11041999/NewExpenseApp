@@ -1,171 +1,79 @@
+function addNewExpense(e){
+    e.preventDefault();
 
+    const expenseDetails = {
+        amount: e.target.amount.value,
+        description: e.target.description.value,
+        category: e.target.category.value,
 
-async function getData() {
-    const response = await axios.get('http://localhost:3000/expense');
-    return response;
-  }
-  
-  async function postData(data) {
-    const response = await axios.post('http://localhost:3000/expense/add',data);
-    return response.data;
-  }
-  
-  async function updateData(data,id) {
-    const response = await axios.post(`http://localhost:3000/edit/${id}`, data);
-    return response.data;
-  }
-  async function deleteTask(id) {
-    const response = await axios.delete(`http://localhost:3000/delete/${id}`);
-    return response;
-  }
-  
-  
-  document.addEventListener("DOMContentLoaded",async ()=>{
-    const form = document.getElementById('form');
-    const list = document.getElementById('expenses');
-  
-    await loadContent();
-    const submit = form.querySelector('#submit')
-    submit.addEventListener('click',event=>handleSubmit(event,form));
-    list.addEventListener('click',handleList);
+    }
+    console.log(expenseDetails)
+    const token  = localStorage.getItem('token')
+    axios.post('http://localhost:3000/expense/addexpense',expenseDetails,  { headers: {"Authorization" : token} })
+        .then((response) => {
+
+        addNewExpensetoUI(response.data.expense);
+
+    }).catch(err => showError(err))
+
+}
+
+function parseJwt (token) {
+    var base64Url = token.split('.')[1];
+    var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+
+    return JSON.parse(jsonPayload);
+}
+
+window.addEventListener('DOMContentLoaded', ()=> {
+    const token  = localStorage.getItem('token')
+    const decodeToken = parseJwt(token)
+    console.log(decodeToken)
     
-    async function loadContent(){
-        try{
-            const response = await getData();
-            renderHtml(response.data);
-        }catch(e){
-            console.log(e);
-        }
-    }
-    async function renderHtml(res){
-        for (const expense of res) {
-  
-            createList(expense);
-          }
-    }
-    function createList(expense){
-        const listItem = document.createElement('li');
-            listItem.innerHTML = `
-              <span>${expense.amount}</span>
-              <span>${expense.description}</span>
-              <span>${expense.category}</span><br>
-              <button class="edit-button" data-id="${expense.id}">Edit</button>
-              <button class="delete-button" data-id="${expense.id}">Delete</button>
-            `;
-            list.appendChild(listItem);
-    }
-    async function handleSubmit(event,form){
-        event.preventDefault();
-        const amountSpan = form.querySelector('#amount');
-        const descriptionSpan = form.querySelector('#description');
-        const categorySpan = form.querySelector('#category');
-        const amount = amountSpan.value;
-        const description = descriptionSpan.value
-        const category = categorySpan.value
-  
-        if (!amount || !description || !category) {
-          alert('Please enter all the details');
-          return;
-        }
-        try{
-            const obj ={amount,description,category}
-            const newExpense = await postData(obj);
-            amountSpan.value ='';
-            descriptionSpan.value ='';
-            categorySpan.value ='';
-  
-            createList(newExpense);
-        }catch(e){
-            console.log(e);
-        }
-    }
-    async function handleList(event) {
-        // Handle clicks on the delete button
-        if (event.target.classList.contains('delete-button')) {
-          event.preventDefault();
-          const id = event.target.dataset.id;
-          try {
-            await deleteTask(id);
-            const listItem = event.target.parentElement;
-            listItem.remove();
-          } catch (error) {
-            console.error(error);
-          }
-        }
-        // Handle clicks on the edit button
-        if (event.target.classList.contains('edit-button')) {
-          event.preventDefault();
-          const id = event.target.dataset.id;
-          try{
-            
-            const listItem = event.target.parentElement;
-            const amountSpan = listItem.querySelector('span:nth-child(1)');
-            const descriptionSpan = listItem.querySelector('span:nth-child(2)');
-            const categorySpan = listItem.querySelector('span:nth-child(3)');
-        
-            // Create a form with the expense data
-            const form = document.createElement('form');
-            form.id = 'form2';
-            form.innerHTML = `
-              <label for="amount-input">amount:</label>
-              <input id="amount-i" type="text" value="${amountSpan.textContent}">
-              <label for="description-input">description:</label>
-              <input id="description-i" type="description" value="${descriptionSpan.textContent}">
-              <label for="category-input">category:</label>
-              <input id="category-i" type="tel" value="${categorySpan.textContent}">
-              <button type="submit">Save</button>
-              <button type="button" class="cancel-button">Cancel</button>
-            `;
-            // Replace the list item with the form
-            listItem.appendChild(form);
-        
-            // Attach event listeners to the form submit button and the cancel button
-            const saveButton = form.querySelector('button[type="submit"]');
-            const cancelButton = form.querySelector('.cancel-button');
-            saveButton.addEventListener('click', event => handleSaveClick(event, listItem));
-            cancelButton.addEventListener('click', handleCancelClick);
-          }catch(e){
-            console.log(e);
-          }
-        
-          async function handleSaveClick(event,listItem) {
-            event.preventDefault();
-            const listItem1 = event.target.parentElement;
-            const amountSpan = listItem.querySelector('span:nth-child(1)');
-            const descriptionSpan = listItem.querySelector('span:nth-child(2)');
-            const categorySpan = listItem.querySelector('span:nth-child(3)');// Get the input values from the form
-            const amount = document.getElementById('amount-i').value.trim();
-            const description = document.getElementById('description-i').value.trim();
-            const category = document.getElementById('category-i').value.trim();
-      
-            // Validate the input v alues
-            if (!amount || !description || !category) {
-              return;
-            }
-      
-            // Update the expense in the API
-            try{
-                const res = await updateData({amount,description,category},id)
-                // Update the list item with the updated expense data
-                
-                listItem1.remove();
-                amountSpan.innerHTML = amount;
-                descriptionSpan.innerHTML = description;
-                categorySpan.innerHTML = category;
-            
-            }catch(error) {
-                console.error(error);
-                alert('There was an error updating the expense.');
-              }
-          }
-      
-          function handleCancelClick(event) {
-            const listItem = event.target.parentElement;
-            const id = event.target.dataset.id; 
-            listItem.remove();
-            
-          }
-        }
-      }
-      
-  })
+    axios.get('http://localhost:3000/expense/getexpenses', { headers: {"Authorization" : token} })
+    .then(response => {
+            response.data.expenses.forEach(expense => {
+
+                addNewExpensetoUI(expense);
+            })
+    }).catch(err => {
+        showError(err)
+    })
+});
+
+function addNewExpensetoUI(expense){
+    const parentElement = document.getElementById('listOfExpenses');
+    const expenseElemId = `expense-${expense.id}`;
+    parentElement.innerHTML += `
+        <li id=${expenseElemId}>
+            ${expense.amount} - ${expense.category} - ${expense.description}
+            <button onclick='deleteExpense(event, ${expense.id})'>
+                Delete Expense
+            </button>
+        </li>`
+}
+
+function deleteExpense(e, expenseid) {
+    const token = localStorage.getItem('token')
+    axios.delete(`http://localhost:3000/expense/deleteexpense/${expenseid}`,  { headers: {"Authorization" : token} }).then(() => {
+
+            removeExpensefromUI(expenseid);
+
+    }).catch((err => {
+        showError(err);
+    }))
+}
+
+function showError(err){
+    document.body.innerHTML += `<div style="color:red;"> ${err}</div>`
+}
+
+
+function removeExpensefromUI(expenseid){
+    const expenseElemId = `expense-${expenseid}`;
+    document.getElementById(expenseElemId).remove();
+}
+

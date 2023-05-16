@@ -1,54 +1,72 @@
+
 const User = require('../models/user');
-const bcrpyt = require('bcrypt');
-function isnotValid(string){
-    if (string==undefined||string.length===0){
+
+const bcrypt = require('bcrypt')
+const jwt = require('jsonwebtoken')
+
+function isstringinvalid(string){
+    if(string == undefined ||string.length === 0){
         return true
-    }return false;
-}
-exports.signup = async (req,res)=>{
-    try{
-        const {name,email,password} = req.body;
-
-    if(isnotValid(name)||isnotValid(email)||isnotValid(password)){
-        return res.status(400).json({err:'Something is missing'})
+    } else {
+        return false
     }
-    const saltrounds = 10
-    bcrpyt.hash(password, saltrounds, async(err,hash)=>{
-        console.log(err);
-        await User.create({name,email,password:hash})
-        res.status(201).json({message:'New user created'})
+}
+
+ const signup = async (req, res)=>{
+    try{
+    const { name, email, password } = req.body;
+    console.log('email', email)
+    if(isstringinvalid(name) || isstringinvalid(email || isstringinvalid(password))){
+        return res.status(400).json({err: "Bad parameters . Something is missing"})
+    }
+    const saltrounds = 10;
+    bcrypt.hash(password, saltrounds, async (err, hash) => {
+        console.log(err)
+        await User.create({ name, email, password: hash })
+        res.status(201).json({message: 'Successfuly create new user'})
     })
-    
-    }catch(err){
-        res.status(403).json(err);
-    }
+    }catch(err) {
+            res.status(500).json(err);
+        }
+
 }
 
-exports.login = async (req,res,next)=>{
+const generateAccessToken = (id, name, ispremiumuser) => {
+    return jwt.sign({ userId : id, name: name, ispremiumuser } ,'secretkey');
+}
+
+const login = async (req, res) => {
     try{
-        const {email,password} = req.body;
-        if (isnotValid(email)||isnotValid(password)){
-            return res.status(400).json({message:"Something was missing",success:false})
-        }
-        const user = await User.findOne({where:{email:email}})
-        if (!user){
-            return res.status(404).json({err:"User not found"})
-        }else{
-            bcrpyt.compare(password,user.password,(err,result)=>{
-                if(err){
-                    throw new Error('Something went wrong');
-                }if(result==true){
-                    return res.status(200).json({success:true, message:"User login Successfully"})
-                }else{
-                    return res.status(401).json({success:false,message:"User not authorized"})
-                }
-            })
+    const { email, password } = req.body;
+    if(isstringinvalid(email) || isstringinvalid(password)){
+        return res.status(400).json({message: 'EMail idor password is missing ', success: false})
+    }
+    console.log(password);
+    const user  = await User.findAll({ where : { email }})
+        if(user.length > 0){
+           bcrypt.compare(password, user[0].password, (err, result) => {
+           if(err){
+            throw new Error('Something went wrong')
+           }
+            if(result === true){
+                return res.status(200).json({success: true, message: "User logged in successfully", token: generateAccessToken(user[0].id, user[0].name, user[0].ispremiumuser)})
+            }
+            else{
+            return res.status(400).json({success: false, message: 'Password is incorrect'})
+           }
+        })
+        } else {
+            return res.status(404).json({success: false, message: 'User Doesnot exitst'})
         }
     }catch(err){
-        res.status(500).json({message:err,success:false})
+        res.status(500).json({message: err, success: false})
     }
 }
 
-function generateAccessToken(id){
+module.exports = {
+    signup,
+    login,
+    generateAccessToken
 
 }
+
