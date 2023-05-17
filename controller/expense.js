@@ -1,12 +1,15 @@
 const Expense = require('../models/expense');
+const User = require('../models/user');
 
-const addexpense = (req, res) => {
+const addexpense = async (req, res) => {
     const { amount, description, category } = req.body;
 
     if(amount == undefined || amount.length === 0 ){
         return res.status(400).json({success: false, message: 'Parameters missing'})
     }
-    
+    const user = await User.findByPk(req.user.id);
+    user.totalexpense = user.totalexpense + +amount;
+    await user.save();
     Expense.create({ amount, description, category, userId: req.user.id}).then(expense => {
         return res.status(201).json({expense, success: true } );
     }).catch(err => {
