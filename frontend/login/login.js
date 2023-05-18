@@ -18,8 +18,24 @@ function login(e) {
     })
 }
 
+const forgot  = document.getElementById('forgot');
+forgot.addEventListener('click',()=>{
+    document.getElementById("loginForm").style.display = "none";
+  document.getElementById("forgotPasswordForm").style.display = "block";
+})
 
-
+document.getElementById("submitEmail").addEventListener("click", async function(event) {
+    event.preventDefault();
+    try{
+        const email = document.getElementById("email").value;
+        console.log('yes');
+        const response = await axios.post("https://localhost:3000/password/forgotpassword", { email })
+        console.log(response);
+      console.log("Forgot password email sent successfully!");
+    }catch(error) {
+        console.error("Failed to send forgot password email:", error);
+      }
+  });
 
 
 

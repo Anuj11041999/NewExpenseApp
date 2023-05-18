@@ -4,30 +4,26 @@ const sequelize = require('../util/database');
 
 const addexpense = async (req, res) => {
     const t = await sequelize.transaction();
-    const { amount, description, category } = req.body;
+    try{
+        const { amount, description, category } = req.body;
 
     if(amount == undefined || amount.length === 0 ){
         return res.status(400).json({success: false, message: 'Parameters missing'})
     }
-    Expense.create({ amount, description, category, userId: req.user.id},{transaction:t}).then(expense => {
+    const expense = await Expense.create({ amount, description, category, userId: req.user.id},{transaction:t})
         const totalexpense = req.user.totalexpense + Number(amount)
-        User.update({
+        const user = await User.update({
             totalexpense:totalexpense
         },{
             where:{id:req.user.id},
             transaction:t
-        }).then(async()=>{
-            await t.commit();
-            res.status(200).json({expense, success: true } );
-        }).catch(async(err)=>{
-            await t.rollback();
-            return res.status(500).json({success : false, error: err})
         })
-        
-    }).catch(async(err) => {
-        await t.rollback();
+        await t.commit();
+        res.status(200).json({expense, success: true } );
+    }catch(err) {
+        t.rollback();
         return res.status(500).json({success : false, error: err})
-    })
+    }
 }
 
 const getexpenses = (req, res)=> {
@@ -43,32 +39,29 @@ const getexpenses = (req, res)=> {
 
 const deleteexpense = async (req, res) => {
     const t = await sequelize.transaction();
-    const expenseid = req.params.expenseid;
+    try{
+        const expenseid = req.params.expenseid;
     if(expenseid == undefined || expenseid.length === 0){
         return res.status(400).json({success: false, })
     }
-    Expense.destroy({where: { id: expenseid, userId: req.user.id }},{transaction:t}).then((rows) => {
-        const totalexpense = req.user.totalexpense - Number(rows.amount);
-        User.update({
+    const expense = await Expense.destroy({where: { id: expenseid, userId: req.user.id }},{transaction:t})
+    const totalexpense = req.user.totalexpense - Number(rows.amount);
+    const user = User.update({
             totalexpense:totalexpense
         },{
             where :{id:req.user.id},
             transaction:t
-        }).then(async()=>{
-            t.commit();
-            res.status(200).json({ success: true, message: "Deleted Successfuly"});
-        }).catch(async(err)=>{
-            t.rollback();
-            return res.status(404).json({success: false, message: 'Expense couldnt be deleted'})
         })
+            await t.commit();
+            return res.status(200).json({ success: true, message: "Deleted Successfuly"});
         if(rows === 0){
             t.rollback();
             return res.status(404).json({success: false, message: 'Expense doenst belong to the user'})
         }
-    }).catch(err => {
+    }catch(err){
         t.rollback();
         return res.status(500).json({ success: true, message: "Failed"})
-    })
+    }
 }
 
 module.exports = {

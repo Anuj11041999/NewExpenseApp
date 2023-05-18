@@ -11,8 +11,8 @@ function isstringinvalid(string){
         return false
     }
 }
-
- const signup = async (req, res)=>{
+ 
+const signup = async (req, res)=>{
     try{
     const { name, email, password } = req.body;
     if(isstringinvalid(name) || isstringinvalid(email || isstringinvalid(password))){
