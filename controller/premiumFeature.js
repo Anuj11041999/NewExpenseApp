@@ -6,8 +6,6 @@ const e = require('express');
 const getUserLeaderBoard = async (req, res) => {
     try{
         const leaderboard = await User.findAll({
-            attributes: ['id', 'name','totalexpense' ],
-            group:['user.id'],
             order:[['totalexpense', 'DESC']]
 
         })
