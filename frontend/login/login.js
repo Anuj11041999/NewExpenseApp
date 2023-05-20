@@ -24,18 +24,17 @@ forgot.addEventListener('click',()=>{
   document.getElementById("forgotPasswordForm").style.display = "block";
 })
 
-document.getElementById("submitEmail").addEventListener("click", async function(event) {
+async function forgotPassword(event){
     event.preventDefault();
     try{
         const email = document.getElementById("email").value;
-        console.log('yes');
-        const response = await axios.post("https://localhost:3000/password/forgotpassword", { email })
-        console.log(response);
-      console.log("Forgot password email sent successfully!");
-    }catch(error) {
+        const response = await axios.post("http://localhost:3000/password/forgotpassword", { email })
+            console.log(response)
+            console.log("Forgot password email sent successfully!")
+        }catch(error) {
         console.error("Failed to send forgot password email:", error);
       }
-  });
+  }
 
 
 

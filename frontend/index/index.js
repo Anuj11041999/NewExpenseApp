@@ -28,6 +28,9 @@ function parseJwt (token) {
     return JSON.parse(jsonPayload);
 }
 
+function showPremiumExpense(){
+    
+}
 window.addEventListener('DOMContentLoaded', ()=> {
     const token  = localStorage.getItem('token')
     const decodeToken = parseJwt(token)
@@ -37,6 +40,7 @@ window.addEventListener('DOMContentLoaded', ()=> {
         document.getElementById('rzp-button1').style.visibility = "hidden";
         document.getElementById('message').innerHTML = "You are a premium user ";
         leaderboard();
+        showPremiumExpenses();
     }
     
     axios.get('http://localhost:3000/expense/getexpenses', { headers: {"Authorization" : token} })

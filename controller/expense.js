@@ -18,6 +18,7 @@ const addexpense = async (req, res) => {
             where:{id:req.user.id},
             transaction:t
         })
+    
         await t.commit();
         res.status(200).json({expense, success: true } );
     }catch(err) {
